@@ -9,12 +9,17 @@ import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.infrastructure.item.ItemReader;
 import org.springframework.batch.infrastructure.item.ItemWriter;
+import org.springframework.batch.infrastructure.item.database.BeanPropertyItemSqlParameterSourceProvider;
+import org.springframework.batch.infrastructure.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.batch.infrastructure.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.transaction.PlatformTransactionManager;
+
+import javax.sql.DataSource;
+import java.time.LocalDateTime;
 
 @Configuration
 public class ImportacaoJobConfiguration {
@@ -58,6 +63,18 @@ public class ImportacaoJobConfiguration {
                 .targetType(Importacao.class)
                 .build();
     }
+
+    @Bean
+    public ItemWriter<Importacao> writer(DataSource dataSource) {
+        return new JdbcBatchItemWriterBuilder<Importacao>()
+                .dataSource(dataSource)
+                .sql("INSERT INTO importacao (id,cpf, cliente, nascimento, evento, data, tipo_ingresso, valor,hora_importacao) " +
+                        "VALUES (:id, :cpf, :cliente, :nascimento, :evento, :data, :tipoIngresso, :valor" + LocalDateTime.now() + ")")
+                .itemSqlParameterSourceProvider
+                        (new BeanPropertyItemSqlParameterSourceProvider<>())
+                .build();
+    }
+
 
 
 
