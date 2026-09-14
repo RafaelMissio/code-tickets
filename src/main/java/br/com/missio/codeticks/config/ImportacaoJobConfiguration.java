@@ -1,8 +1,10 @@
 package br.com.missio.codeticks.config;
 
 import br.com.missio.codeticks.entities.Importacao;
+import br.com.missio.codeticks.listeners.ImportacaoJobExecutionListener;
 import br.com.missio.codeticks.processors.ImportacaoItemProcessor;
 import br.com.missio.codeticks.readers.ImportacaoItemReader;
+import br.com.missio.codeticks.tasklets.ValidacaoArquivoRecebidoTasklet;
 import br.com.missio.codeticks.writers.ImportacaoItemWriter;
 import org.springframework.batch.core.configuration.support.JdbcDefaultBatchConfiguration;
 import org.springframework.batch.core.job.Job;
@@ -20,7 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
-import java.util.Objects;
+import java.nio.file.Path;
 
 @Configuration
 public class ImportacaoJobConfiguration extends JdbcDefaultBatchConfiguration {
@@ -32,13 +34,26 @@ public class ImportacaoJobConfiguration extends JdbcDefaultBatchConfiguration {
     }
 
     @Bean
-    public Job job(JobRepository jobRepository, Step stepInicial) {
+    public Job job(JobRepository jobRepository,
+                   Step stepValidacaoArquivo,
+                   Step stepInicial,
+                   ImportacaoJobExecutionListener jobExecutionListener) {
         return new JobBuilder("geracao-tickets", jobRepository)
-                .start(stepInicial)
                 .incrementer(new RunIdIncrementer())
+                .listener(jobExecutionListener)
+                .start(stepValidacaoArquivo)
+                .next(stepInicial)
                 .build();
     }
 
+    @Bean
+    public Step stepValidacaoArquivo(JobRepository jobRepository,
+                                      @Value("${importacao.pasta.recebidos}") String pastaRecebidos,
+                                      @Value("${importacao.arquivo.nome}") String nomeArquivo) {
+        return new StepBuilder("stepValidacaoArquivo", jobRepository)
+                .tasklet(new ValidacaoArquivoRecebidoTasklet(Path.of(pastaRecebidos), nomeArquivo), transactionManager)
+                .build();
+    }
 
     @Bean
     public Step stepInicial(JobRepository jobRepository,
@@ -60,9 +75,9 @@ public class ImportacaoJobConfiguration extends JdbcDefaultBatchConfiguration {
     }
 
     @Bean
-    public ItemReader<Importacao> reader(@Value("${importacao.csv.path}")
-                                             String importacaoCsvPath) {
-        return ImportacaoItemReader.build(importacaoCsvPath);
+    public ItemReader<Importacao> reader(@Value("${importacao.pasta.recebidos}") String pastaRecebidos,
+                                          @Value("${importacao.arquivo.nome}") String nomeArquivo) {
+        return ImportacaoItemReader.build(Path.of(pastaRecebidos).resolve(nomeArquivo).toString());
     }
 
     @Bean
@@ -70,5 +85,14 @@ public class ImportacaoJobConfiguration extends JdbcDefaultBatchConfiguration {
         return ImportacaoItemWriter.build(dataSource);
     }
 
+    @Bean
+    public ImportacaoJobExecutionListener jobExecutionListener(
+            @Value("${importacao.pasta.recebidos}") String pastaRecebidos,
+            @Value("${importacao.pasta.processados}") String pastaProcessados,
+            @Value("${importacao.pasta.erro}") String pastaErro,
+            @Value("${importacao.arquivo.nome}") String nomeArquivo) {
+        return new ImportacaoJobExecutionListener(
+                Path.of(pastaRecebidos), Path.of(pastaProcessados), Path.of(pastaErro), nomeArquivo);
+    }
 
 }

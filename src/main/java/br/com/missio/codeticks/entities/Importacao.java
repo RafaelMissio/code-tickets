@@ -24,7 +24,6 @@ public class Importacao {
     private LocalDateTime horaImportacao;
     private double taxaAdministrativa;
 
-
     public Long getId() {
         return id;
     }
