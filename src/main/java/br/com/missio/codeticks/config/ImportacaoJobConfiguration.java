@@ -9,7 +9,6 @@ import br.com.missio.codeticks.writers.ImportacaoItemWriter;
 import org.springframework.batch.core.configuration.support.JdbcDefaultBatchConfiguration;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
-import org.springframework.batch.core.job.parameters.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.step.builder.StepBuilder;
@@ -37,9 +36,10 @@ public class ImportacaoJobConfiguration extends JdbcDefaultBatchConfiguration {
     public Job job(JobRepository jobRepository,
                    Step stepValidacaoArquivo,
                    Step stepInicial,
-                   ImportacaoJobExecutionListener jobExecutionListener) {
+                   ImportacaoJobExecutionListener jobExecutionListener,
+                   @Value("${importacao.arquivo.nome}") String nomeArquivo) {
         return new JobBuilder("geracao-tickets", jobRepository)
-                .incrementer(new RunIdIncrementer())
+                .incrementer(new NomeArquivoJobParametersIncrementer(nomeArquivo))
                 .listener(jobExecutionListener)
                 .start(stepValidacaoArquivo)
                 .next(stepInicial)
