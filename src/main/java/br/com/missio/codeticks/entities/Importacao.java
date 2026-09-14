@@ -22,6 +22,8 @@ public class Importacao {
     private String tipoIngresso;
     private Double valor;
     private LocalDateTime horaImportacao;
+    private double taxaAdministrativa;
+
 
     public Long getId() {
         return id;
@@ -93,5 +95,13 @@ public class Importacao {
 
     public void setHoraImportacao(LocalDateTime horaImportacao) {
         this.horaImportacao = horaImportacao;
+    }
+
+    public double getTaxaAdministrativa() {
+        return taxaAdministrativa;
+    }
+
+    public void setTaxaAdministrativa(double taxaAdministrativa) {
+        this.taxaAdministrativa = taxaAdministrativa;
     }
 }
