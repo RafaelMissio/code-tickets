@@ -32,4 +32,13 @@ public final class NomeArquivoValidator {
                     "Nome de arquivo invalido: '%s'. A data '%s' nao e valida".formatted(nomeArquivo, matcher.group(1)));
         }
     }
+
+    public static boolean isValido(String nomeArquivo) {
+        try {
+            validar(nomeArquivo);
+            return true;
+        } catch (NomeArquivoInvalidoException e) {
+            return false;
+        }
+    }
 }
